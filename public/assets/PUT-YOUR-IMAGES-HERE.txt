@@ -1,0 +1,23 @@
+Add the image files listed below into this folder.
+
+nilkamalglobalegglogo.png
+homepage1st.png
+homepage2nd.png
+homepage3rd.png
+homepage4rth.png
+homepage6th.png
+homepage7th.png
+homepage8th.png
+homepage9th.png
+homepage10th.png
+homepage11th.png
+aboutpage1st.png
+certificate1st.png
+certificate2nd.png
+certificate3rd.png
+farmers1st.png
+farmers2nd.png
+footer1st.png
+footer2nd.png
+
+You can use JPG/WebP instead, but then update the matching filename in src/main.jsx.
