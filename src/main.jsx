@@ -85,13 +85,66 @@ function go(route) {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
+function useScrollAnimations(route) {
+  useEffect(() => {
+    const selector = [
+      ".card",
+      ".image-card",
+      ".glass-card",
+      ".image-frame",
+      ".prose-company > *",
+      ".section-pad > div > div",
+      "section [class*=\"rounded-3xl\"]",
+      "section [class*=\"rounded-[2rem]\"]"
+    ].join(",");
+
+    const elements = Array.from(document.querySelectorAll(selector));
+    elements.forEach((el, index) => {
+      el.classList.add("scroll-reveal");
+      el.classList.add(index % 3 === 0 ? "reveal-left" : index % 3 === 1 ? "reveal-up" : "reveal-right");
+      el.style.setProperty("--reveal-delay", `${Math.min(index % 8, 7) * 75}ms`);
+    });
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-visible");
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: "0px 0px -50px 0px" });
+
+    elements.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [route]);
+}
+
+function FloatingWhatsApp() {
+  return (
+    <a
+      href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent("Hello Nilkamal Global Egg, I would like to discuss an egg export requirement.")}`}
+      target="_blank"
+      rel="noreferrer"
+      aria-label="Chat with Nilkamal Global Egg on WhatsApp"
+      className="floating-whatsapp"
+    >
+      <span className="floating-whatsapp-pulse" />
+      <MessageCircle size={25} />
+    </a>
+  );
+}
+
+function AnimatedPage({ children }) {
+  return <div className="page-transition">{children}</div>;
+}
+
 function WhatsAppButton({ compact = false }) {
   return (
     <a
-      href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent("Hello Nilkamal Global Eggs, I would like to discuss an egg export requirement.")}`}
+      href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent("Hello Nilkamal Global Egg, I would like to discuss an egg export requirement.")}`}
       target="_blank"
       rel="noreferrer"
-      className={`inline-flex items-center justify-center gap-2 rounded-full bg-[#b6e43b] px-5 py-3 font-bold text-[#102018] shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl ${compact ? "text-sm" : ""}`}
+      className={`whatsapp-button inline-flex items-center justify-center gap-2 rounded-full bg-[#b6e43b] px-5 py-3 font-bold text-[#102018] shadow-lg transition ${compact ? "text-sm" : ""}`}
     >
       <MessageCircle size={18} />
       Get in Touch
@@ -102,7 +155,30 @@ function WhatsAppButton({ compact = false }) {
 function Header() {
   const [open, setOpen] = useState(false);
   const [markets, setMarkets] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 18);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+
+    const html = document.documentElement;
+    const body = document.body;
+    const previousHtmlOverscroll = html.style.overscrollBehaviorY;
+    const previousBodyOverscroll = body.style.overscrollBehaviorY;
+    const previousBodyBackground = body.style.backgroundColor;
+
+    html.style.overscrollBehaviorY = "none";
+    body.style.overscrollBehaviorY = "none";
+    body.style.backgroundColor = "#071811";
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      html.style.overscrollBehaviorY = previousHtmlOverscroll;
+      body.style.overscrollBehaviorY = previousBodyOverscroll;
+      body.style.backgroundColor = previousBodyBackground;
+    };
+  }, []);
   const navigate = (route) => {
     setOpen(false);
     setMarkets(false);
@@ -110,18 +186,18 @@ function Header() {
   };
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-[#071811]/90 text-white backdrop-blur-xl">
+    <header className={`site-header sticky top-0 z-50 text-white transition-all duration-500 ${scrolled ? "header-scrolled bg-[#071811] shadow-2xl shadow-black/30" : "bg-[#071811] shadow-lg shadow-black/15"}`}>
       <div className="mx-auto flex max-w-7xl items-center justify-between px-2 py-3 lg:px-6">
-        <button onClick={() => navigate("/")} className="shrink-0" aria-label="Nilkamal Global Eggs home">
-          <img src={asset("nilkamalglobalegglogo.png")} alt="Nilkamal Global Eggs" className="h-30 w-auto object-contain" />
+        <button onClick={() => navigate("/")} className="shrink-0" aria-label="Nilkamal Global Egg home">
+          <img src={asset("nilkamalglobalegglogo.png")} alt="Nilkamal Global Egg" className="h-40 w-auto object-contain" />
         </button>
 
         <nav className="hidden items-center gap-1 lg:flex">
           {navItems.slice(0, 3).map((item) => (
-            <button key={item.label} onClick={() => navigate(item.route)} className="nav-link">{item.label}</button>
+            <button key={item.label} onClick={() => navigate(item.route)} className="nav-link px-4 py-3 text-base">{item.label}</button>
           ))}
           <div className="relative">
-            <button onClick={() => setMarkets(!markets)} className="nav-link inline-flex items-center gap-1">
+            <button onClick={() => setMarkets(!markets)} className="nav-link inline-flex items-center gap-2 px-4 py-3 text-base">
               Markets <ChevronDown size={15} className={markets ? "rotate-180 transition" : "transition"} />
             </button>
             {markets && (
@@ -132,7 +208,7 @@ function Header() {
             )}
           </div>
           {navItems.slice(3).map((item) => (
-            <button key={item.label} onClick={() => navigate(item.route)} className="nav-link">{item.label}</button>
+            <button key={item.label} onClick={() => navigate(item.route)} className="nav-link px-4 py-3 text-base">{item.label}</button>
           ))}
         </nav>
 
@@ -181,22 +257,22 @@ function Hero() {
     ["24/7 Customer Support", "Responsive buyer communication"]
   ];
   return (
-    <section className="relative min-h-[820px] overflow-hidden bg-[#081a12] pt-20">
-      <div className="absolute inset-0 bg-cover bg-center" style={{backgroundImage: `url("${asset("homepage1st.jpg")}")`}} />
+    <section className="relative min-h-[820px] overflow-hidden bg-[#081a12]">
+      <div className="hero-bg absolute inset-0 bg-cover bg-center" style={{backgroundImage: `url("${asset("homepage1st.jpg")}")`}} />
       <div className="absolute inset-0 bg-gradient-to-r from-[#06150e]/95 via-[#06150e]/65 to-[#06150e]/20" />
       <div className="absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-[#06150e] to-transparent" />
       <div className="relative mx-auto flex min-h-[740px] max-w-7xl items-center px-5 py-24 lg:px-8">
         <div className="max-w-4xl">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-white backdrop-blur">
+          <div className="hero-badge mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-white backdrop-blur">
             <Globe2 size={16} className="text-lime-400" /> Premium Indian Egg Exporter
           </div>
-          <h1 className="font-display text-5xl font-black leading-[0.98] tracking-tight text-white sm:text-7xl lg:text-8xl">
+          <h1 className="hero-title font-display text-5xl font-black leading-[0.98] tracking-tight text-white sm:text-7xl lg:text-8xl">
             Egg-sporting Premium Nutrition, <span className="text-lime-400">Boundless Reach!</span>
           </h1>
-          <p className="mt-7 max-w-2xl text-lg leading-8 text-white/80 sm:text-xl">
+          <p className="hero-copy mt-7 max-w-2xl text-lg leading-8 text-white/80 sm:text-xl">
             Export-ready White and Brown Table Eggs backed by quality control, dependable sourcing and professional international logistics.
           </p>
-          <div className="mt-9 flex flex-wrap gap-3">
+          <div className="hero-actions mt-9 flex flex-wrap gap-3">
             <WhatsAppButton />
             <button onClick={() => document.getElementById("welcome")?.scrollIntoView({behavior:"smooth"})} className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-5 py-3 font-bold text-white backdrop-blur hover:bg-white/15">
               Explore Company <ArrowRight size={18}/>
@@ -225,9 +301,9 @@ function Welcome() {
       <div className="mx-auto grid max-w-7xl items-center gap-14 px-5 lg:grid-cols-2 lg:px-8">
         <div>
           <div className="eyebrow">Our Export Philosophy</div>
-          <h2 className="font-display text-4xl font-black tracking-tight text-[#0c2117] sm:text-6xl">Welcome to Nilkamal Global Eggs</h2>
+          <h2 className="font-display text-4xl font-black tracking-tight text-[#0c2117] sm:text-6xl">Welcome to Nilkamal Global Egg</h2>
           <div className="mt-7 space-y-5 text-lg leading-8 text-slate-600">
-            <p>At Nilkamal Global Eggs, we believe strong international partnerships are built on trust, consistency, and absolute operational clarity. Every global buyer deserves a supply partner who guarantees flock-to-carton integrity, maintains open communication, and executes every shipment with total precision.</p>
+            <p>At Nilkamal Global Egg, we believe strong international partnerships are built on trust, consistency, and absolute operational clarity. Every global buyer deserves a supply partner who guarantees flock-to-carton integrity, maintains open communication, and executes every shipment with total precision.</p>
             <p>We are committed to delivering a seamless end-to-end export process—spanning rigorous egg quality grading, export-grade protective packaging, optimized international cold-chain logistics, and dedicated client service. We do more than just deliver orders; we serve as a dependable, seamless extension of your global poultry supply chain.</p>
           </div>
           <div className="mt-8 flex flex-wrap gap-3">
@@ -235,7 +311,7 @@ function Welcome() {
           </div>
         </div>
         <div className="image-frame">
-          <img src={asset("homepage2nd.webp")} alt="Nilkamal Global Eggs operations" />
+          <img src={asset("homepage2nd.webp")} alt="Nilkamal Global Egg operations" />
         </div>
       </div>
     </section>
@@ -251,7 +327,7 @@ function Difference() {
         </div>
         <div className="order-1 lg:order-2">
           <div className="eyebrow">Why Us</div>
-          <h2 className="font-display text-4xl font-black tracking-tight text-[#0c2117] sm:text-5xl">What Sets Nilkamal Global Eggs Apart?</h2>
+          <h2 className="font-display text-4xl font-black tracking-tight text-[#0c2117] sm:text-5xl">What Sets Nilkamal Global Egg Apart?</h2>
           <div className="mt-8 space-y-6">
             {[
               ["Customer-Centric Support", "We listen actively, respond promptly, and adapt our egg supply, grading, and packaging formats to match your specific market demands."],
@@ -275,13 +351,13 @@ function Difference() {
 function Distinction() {
   return (
     <section className="relative min-h-[650px] overflow-hidden bg-black">
-      <div className="absolute inset-0 bg-cover bg-center" style={{backgroundImage:`url("${asset("homepage4rth.jpg")}")`}} />
+      <div className="hero-bg absolute inset-0 bg-cover bg-center" style={{backgroundImage:`url("${asset("homepage4rth.jpg")}")`}} />
       <div className="absolute inset-0 bg-gradient-to-b from-black via-black/65 to-[#06150e]/95" />
       <div className="relative mx-auto flex min-h-[650px] max-w-5xl items-center px-5 py-24 text-center text-white">
         <div>
           <div className="eyebrow">Driven by Distinction</div>
           <h2 className="font-display text-5xl font-black sm:text-7xl">Driven by Distinction</h2>
-          <p className="mx-auto mt-7 max-w-3xl text-lg leading-8 text-white/80">At Nilkamal Global Eggs, we look far beyond one-time trades. We build lasting international partnerships by earning your confidence through every shipment, every transparent interaction, and every promise we keep.</p>
+          <p className="mx-auto mt-7 max-w-3xl text-lg leading-8 text-white/80">At Nilkamal Global Egg, we look far beyond one-time trades. We build lasting international partnerships by earning your confidence through every shipment, every transparent interaction, and every promise we keep.</p>
           <p className="mx-auto mt-5 max-w-3xl text-lg leading-8 text-white/80">As your trusted global poultry partner, our objective is straight to the point—empowering your market growth while we handle the seamless delivery of farm-fresh, high-grade eggs that consistently surpass international standards.</p>
           <div className="mx-auto mt-9 inline-block rounded-2xl border border-lime-300/30 bg-lime-300/10 px-7 py-5 text-xl font-black text-lime-300 sm:text-2xl">“Your Growth. Our Guarantee. Every Batch, Every Destination.”</div>
         </div>
@@ -293,10 +369,10 @@ function Distinction() {
 function ServicesPreview() {
   return (
     <section className="section-pad bg-[#f5f7f2]" id="services">
-      <SectionHeading eyebrow="Our Services" title="What Makes You Choose Nilkamal Global Eggs?" text="A practical, export-focused operating model built around quality, traceability, biosecurity and dependable delivery." />
+      <SectionHeading eyebrow="Our Services" title="What Makes You Choose Nilkamal Global Egg?" text="A practical, export-focused operating model built around quality, traceability, biosecurity and dependable delivery." />
       <div className="mx-auto mt-14 grid max-w-7xl gap-5 px-5 sm:grid-cols-2 lg:grid-cols-5 lg:px-8">
         {services.map(({icon:Icon,title,text},i) => (
-          <article key={title} className="card group">
+          <article key={title} className="card group interactive-card">
             <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e8f5ca] text-[#15321f] transition group-hover:bg-[#15321f] group-hover:text-lime-300"><Icon size={23}/></div>
             <div className="mb-3 text-xs font-black text-lime-700">0{i+1}</div>
             <h3 className="text-xl font-black text-[#0c2117]">{title}</h3>
@@ -315,10 +391,10 @@ function Eggs() {
   ];
   return (
     <section className="section-pad bg-white">
-      <SectionHeading eyebrow="Export-Ready Table Eggs" title="Premium White & Brown Table Eggs" text="At Nilkamal Global Eggs, we supply top-tier White and Brown Table Eggs, meticulously graded and handled under cold-chain standards to guarantee maximum freshness, structural integrity, and uniform size. Both options reflect our dedication to stable, export-ready poultry solutions tailored for international commercial and retail markets." />
+      <SectionHeading eyebrow="Export-Ready Table Eggs" title="Premium White & Brown Table Eggs" text="At Nilkamal Global Egg, we supply top-tier White and Brown Table Eggs, meticulously graded and handled under cold-chain standards to guarantee maximum freshness, structural integrity, and uniform size. Both options reflect our dedication to stable, export-ready poultry solutions tailored for international commercial and retail markets." />
       <div className="mx-auto mt-14 grid max-w-6xl gap-8 px-5 lg:grid-cols-2 lg:px-8">
         {eggCards.map(([image,title,text,attrs]) => (
-          <article key={title} className="overflow-hidden rounded-[2rem] border border-slate-200 bg-[#f7f9f5] shadow-sm">
+          <article key={title} className="overflow-hidden rounded-[2rem] border border-slate-200 bg-[#f7f9f5] shadow-sm interactive-card">
             <img src={asset(image)} alt={title} className="h-72 w-full object-cover" />
             <div className="p-8">
               <h3 className="font-display text-3xl font-black text-[#0c2117]">{title}</h3>
@@ -352,10 +428,10 @@ function Nutrition() {
 function Applications() {
   return (
     <section id="markets" className="section-pad bg-[#eef2e9]">
-      <SectionHeading eyebrow="Market Applications" title="Versatile Applications Across Global Markets" text="With an uncompromising focus on farm freshness, biosecurity, and cold-chain integrity, Nilkamal Global Eggs delivers table eggs optimized for diverse international commercial uses." />
+      <SectionHeading eyebrow="Market Applications" title="Versatile Applications Across Global Markets" text="With an uncompromising focus on farm freshness, biosecurity, and cold-chain integrity, Nilkamal Global Egg delivers table eggs optimized for diverse international commercial uses." />
       <div className="mx-auto mt-14 grid max-w-7xl gap-6 px-5 sm:grid-cols-2 lg:grid-cols-4 lg:px-8">
         {applications.map(([image,title,text]) => (
-          <article key={title} className="image-card">
+          <article key={title} className="image-card interactive-card">
             <img src={asset(image)} alt={title} />
             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/75 to-transparent p-6 pt-20 text-white">
               <h3 className="text-xl font-black">{title}</h3>
@@ -375,7 +451,7 @@ function ContactForm() {
       method="POST"
       className="space-y-5"
     >
-      <input type="hidden" name="_subject" value="New Egg Export Inquiry — Nilkamal Global Eggs" />
+      <input type="hidden" name="_subject" value="New Egg Export Inquiry — Nilkamal Global Egg" />
       <input type="hidden" name="_template" value="table" />
       <input type="hidden" name="_captcha" value="false" />
       <input type="hidden" name="_next" value={window.location.href.split("#")[0] + "#/contact-success"} />
@@ -427,7 +503,7 @@ function ContactInfo() {
       <h3 className="font-display text-3xl font-black">Contact Information</h3>
       <div className="mt-9 space-y-7">
         <div className="flex gap-4"><Users className="mt-1 text-lime-300" size={20}/><div><div className="text-xs font-bold uppercase tracking-wider text-white/45">Contact Person</div><div className="mt-1 font-semibold">Dr. Mahesh Eknath Mungase</div></div></div>
-        <div className="flex gap-4"><MapPin className="mt-1 text-lime-300" size={20}/><div><div className="text-xs font-bold uppercase tracking-wider text-white/45">Address</div><div className="mt-1 leading-7">Nilkamal Global Eggs, Wavi Road, Chor Kauthe, Maharashtra 422611</div></div></div>
+        <div className="flex gap-4"><MapPin className="mt-1 text-lime-300" size={20}/><div><div className="text-xs font-bold uppercase tracking-wider text-white/45">Address</div><div className="mt-1 leading-7">Nilkamal Global Egg, Wavi Road, Chor Kauthe, Maharashtra 422611</div></div></div>
         <div className="flex gap-4"><Phone className="mt-1 text-lime-300" size={20}/><div><div className="text-xs font-bold uppercase tracking-wider text-white/45">Phone</div><a className="mt-1 block font-semibold hover:text-lime-300" href={`tel:+${WHATSAPP}`}>+91 95617 89987</a></div></div>
         <div className="flex gap-4"><Mail className="mt-1 text-lime-300" size={20}/><div><div className="text-xs font-bold uppercase tracking-wider text-white/45">E-mail</div><a className="mt-1 block break-all font-semibold hover:text-lime-300" href={`mailto:${EMAIL}`}>{EMAIL}</a></div></div>
       </div>
@@ -460,12 +536,12 @@ function AboutPage() {
   return (
     <>
       <Header />
-      <main className="pt-20">
-        <PageHero title="About Nilkamal Global Eggs" eyebrow="Our Story" image="aboutpage1st.jpg" />
+      <main className="">
+        <PageHero title="About Nilkamal Global Egg" eyebrow="Our Story" image="aboutpage1st.jpg" />
         <section className="section-pad bg-white">
           <div className="mx-auto grid max-w-7xl gap-14 px-5 lg:grid-cols-[1.1fr_0.9fr] lg:px-8">
             <div className="prose-company">
-              <p>Established in 2001, Nilkamal Global Eggs is a Central India-based enterprise specializing in integrated poultry farming, breeding, and global egg export. Driven by over two decades of dedicated industry leadership, our organization has evolved from a pioneer in regional poultry management into a global supplier of premium poultry products.</p>
+              <p>Established in 2001, Nilkamal Global Egg is a Central India-based enterprise specializing in integrated poultry farming, breeding, and global egg export. Driven by over two decades of dedicated industry leadership, our organization has evolved from a pioneer in regional poultry management into a global supplier of premium poultry products.</p>
               <p>We are dedicated to the poultry sector—combining modern biosecurity standards, specialized avian nutrition, and state-of-the-art infrastructure to deliver consistent quality to international markets.</p>
               <h3>Our Core Business Divisions</h3>
               <p>Our integrated infrastructure covers every stage of the poultry supply chain:</p>
@@ -488,7 +564,7 @@ function AboutPage() {
               <p><b>Egg Varieties:</b> Certified Organic, Table Eggs, Free-Range, Omega-3 Enriched, Kadaknath, and Specialty Native Eggs.</p>
               <p><b>Poultry Breeds:</b> Commercial Layers, Broilers, Day-Old Chicks, and Live / Processed Desi and Kadaknath.</p>
               <p><b>Feed Solutions:</b> Certified Organic Poultry Feed, Layer Feeds, Starter and Grower Formulations.</p>
-              <h3>Why Partner With Nilkamal Global Eggs?</h3>
+              <h3>Why Partner With Nilkamal Global Egg?</h3>
               <ul>
                 <li><b>Established Legacy:</b> Built on 25+ years of focused poultry expertise since 2001.</li>
                 <li><b>100% Poultry Focused:</b> Every resource, facility, and research initiative is dedicated to poultry excellence.</li>
@@ -496,7 +572,7 @@ function AboutPage() {
                 <li><b>Farmer-Centric Sourcing:</b> Direct collaboration with farming communities for responsible sourcing and sustainable flock management.</li>
               </ul>
             </div>
-            <div className="lg:sticky lg:top-28 lg:self-start"><div className="image-frame"><img src={asset("aboutpage1st.jpg")} alt="Nilkamal Global Eggs facility" /></div></div>
+            <div className="lg:sticky lg:top-28 lg:self-start"><div className="image-frame"><img src={asset("aboutpage1st.jpg")} alt="Nilkamal Global Egg facility" /></div></div>
           </div>
         </section>
       </main>
@@ -507,8 +583,8 @@ function AboutPage() {
 
 function PageHero({ title, eyebrow, image }) {
   return (
-    <section className="relative flex min-h-[430px] items-end overflow-hidden bg-[#0b1f17]">
-      {image && <div className="absolute inset-0 bg-cover bg-center opacity-45" style={{backgroundImage:`url("${asset(image)}")`}} />}
+    <section className="relative flex min-h-[322px] items-end overflow-hidden bg-[#0b1f17]">
+      {image && <div className="hero-bg absolute inset-0 bg-cover bg-center opacity-45" style={{backgroundImage:`url("${asset(image)}")`}} />}
       <div className="absolute inset-0 bg-gradient-to-t from-[#071811] via-[#071811]/65 to-transparent" />
       <div className="relative mx-auto w-full max-w-7xl px-5 pb-16 lg:px-8">
         <div className="eyebrow">{eyebrow}</div>
@@ -526,11 +602,11 @@ function IndiaPage() {
   return (
     <>
       <Header />
-      <main className="pt-20">
+      <main className="">
         <PageHero title="Smart Protein — India" eyebrow="Domestic Market" image="homepage6th.png" />
         <section className="section-pad bg-white">
           <div className="mx-auto max-w-5xl px-5 lg:px-8">
-            <SectionHeading title="Why Smart Protein?" text="Smart Protein is the consumer-ready retail egg brand from Nilkamal Global Eggs, engineered to deliver an unmatched combination of natural nutrition, farm freshness, hygiene, and everyday convenience." />
+            <SectionHeading title="Why Smart Protein?" text="Smart Protein is the consumer-ready retail egg brand from Nilkamal Global Egg, engineered to deliver an unmatched combination of natural nutrition, farm freshness, hygiene, and everyday convenience." />
             <div className="mx-auto mt-10 max-w-4xl space-y-5 text-lg leading-8 text-slate-600">
               <p>The name embodies our core conviction: table eggs represent nature’s efficient source of bioavailable protein. Backed by Nilkamal’s established poultry heritage since 2001, every pack represents decades of expertise in farm management, cold-chain handling, and stringent biosecurity.</p>
             </div>
@@ -565,285 +641,277 @@ function WorldPage() {
   return (
     <>
       <Header />
+      {/* Hero */}
+      <section className="relative min-h-[70vh] flex items-center overflow-hidden bg-slate-950">
+        <div className="absolute inset-0">
+          <img
+            src={asset("markets1st.jpg")}
+            alt="Nilkamal Global Egg international markets"
+            className="h-full w-full object-cover"
+          />
 
-      <main className="pt-20">
-        {/* Hero */}
-        <section className="relative min-h-[70vh] overflow-hidden bg-slate-950">
-          <div className="absolute inset-0">
-            <img
-              src={asset("markets1st.jpg")}
-              alt="Nilkamal Global Eggs international markets"
-              className="h-full w-full object-cover"
-            />
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-950/75 to-slate-950/30" />
+        </div>
 
-            <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-950/75 to-slate-950/30" />
+        <div className="relative mx-auto w-full max-w-7xl px-6 py-24 sm:px-8 lg:px-12">
+          <div className="max-w-4xl">
+            <p className="mb-5 text-sm font-semibold uppercase tracking-[0.28em] text-amber-400">
+              Nilkamal Global Egg
+            </p>
+
+            <h1 className="text-4xl font-bold leading-tight text-white sm:text-5xl lg:text-7xl">
+              Global Footprint &
+              <span className="block text-amber-400">
+                International Reach
+              </span>
+            </h1>
+
+            <p className="mt-7 max-w-3xl text-base leading-8 text-slate-200 sm:text-lg">
+              Nilkamal Global Egg has built a resilient international supply
+              network, delivering farm-fresh, biosecure table eggs to
+              commercial importers, retail chains, and food service partners
+              across the globe.
+            </p>
+
+            <div className="mt-9 flex flex-wrap gap-4">
+              <a
+                href="#global-reach"
+                className="rounded-full bg-amber-500 px-7 py-3.5 text-sm font-bold text-slate-950 transition hover:bg-amber-400"
+              >
+                Explore Our Global Reach
+              </a>
+
+              <a
+                href="#world-contact"
+                className="rounded-full border border-white/30 bg-white/10 px-7 py-3.5 text-sm font-bold text-white backdrop-blur-sm transition hover:bg-white/20"
+              >
+                Discuss Your Requirements
+              </a>
+            </div>
           </div>
+        </div>
+      </section>
 
-          <div className="relative mx-auto flex min-h-[70vh] w-full max-w-7xl items-center px-5 py-24 lg:px-8">
-            <div className="max-w-4xl">
-              <p className="mb-5 text-sm font-semibold uppercase tracking-[0.28em] text-lime-400">
-                Nilkamal Global Eggs
-              </p>
+      {/* Global Reach */}
+      <section
+        id="global-reach"
+        className="bg-white px-6 py-20 sm:px-8 lg:px-12"
+      >
+        <div className="mx-auto max-w-7xl">
+          <div className="grid gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+            <div>
+              <span className="text-sm font-bold uppercase tracking-[0.2em] text-amber-600">
+                International Supply Network
+              </span>
 
-              <h1 className="font-display text-5xl font-black leading-tight text-white sm:text-6xl lg:text-7xl">
-                Global Footprint &
-                <span className="block text-lime-400">
-                  International Reach
-                </span>
-              </h1>
+              <h2 className="mt-4 text-3xl font-bold leading-tight text-slate-900 sm:text-4xl">
+                Global Footprint & International Reach
+              </h2>
 
-              <p className="mt-7 max-w-3xl text-base leading-8 text-white/80 sm:text-lg">
-                Nilkamal Global Eggs has built a resilient international supply
+              <p className="mt-6 text-base leading-8 text-slate-600">
+                Nilkamal Global Egg has built a resilient international supply
                 network, delivering farm-fresh, biosecure table eggs to
                 commercial importers, retail chains, and food service partners
                 across the globe.
               </p>
 
-              <div className="mt-9 flex flex-wrap gap-4">
-                <a
-                  href="#global-reach"
-                  className="rounded-full bg-lime-400 px-7 py-3.5 text-sm font-bold text-[#102018] transition hover:bg-lime-300"
-                >
-                  Explore Our Global Reach
-                </a>
+              <p className="mt-5 text-base leading-8 text-slate-600">
+                Powered by specialized reefer shipping and streamlined
+                phytosanitary export protocols, we ensure consistent supply
+                continuity to key international corridors across the Middle
+                East (GCC), Southeast Asia, Africa, and CIS regions.
+              </p>
 
-                <a
-                  href="https://wa.me/919561789987?text=Hello%20Nilkamal%20Global%20Eggs%2C%20I%20am%20interested%20in%20your%20international%20export%20solutions."
-                  target="_blank"
-                  rel="noreferrer"
-                  className="rounded-full border border-white/30 bg-white/10 px-7 py-3.5 text-sm font-bold text-white backdrop-blur-sm transition hover:bg-white/20"
-                >
-                  Discuss Your Requirements
-                </a>
-              </div>
-            </div>
-          </div>
-        </section>
+              <div className="mt-8 grid gap-4 sm:grid-cols-2">
+                {[
+                  "Middle East & GCC",
+                  "Southeast Asia",
+                  "Africa",
+                  "CIS Regions",
+                ].map((market) => (
+                  <div
+                    key={market}
+                    className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                  >
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                      ✓
+                    </span>
 
-        {/* Global Reach */}
-        <section
-          id="global-reach"
-          className="bg-white px-5 py-20 sm:px-8 lg:px-12"
-        >
-          <div className="mx-auto max-w-7xl">
-            <div className="grid gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-              <div>
-                <span className="text-sm font-bold uppercase tracking-[0.2em] text-lime-700">
-                  International Supply Network
-                </span>
-
-                <h2 className="mt-4 font-display text-4xl font-black leading-tight text-[#0c2117] sm:text-5xl">
-                  Global Footprint & International Reach
-                </h2>
-
-                <p className="mt-6 text-base leading-8 text-slate-600">
-                  Nilkamal Global Eggs has built a resilient international
-                  supply network, delivering farm-fresh, biosecure table eggs
-                  to commercial importers, retail chains, and food service
-                  partners across the globe.
-                </p>
-
-                <p className="mt-5 text-base leading-8 text-slate-600">
-                  Powered by specialized reefer shipping and streamlined
-                  phytosanitary export protocols, we support consistent supply
-                  continuity across key international corridors including the
-                  Middle East, GCC, Southeast Asia, Africa, and CIS regions.
-                </p>
-
-                <div className="mt-8 grid gap-4 sm:grid-cols-2">
-                  {[
-                    "Middle East & GCC",
-                    "Southeast Asia",
-                    "Africa",
-                    "CIS Regions",
-                  ].map((market) => (
-                    <div
-                      key={market}
-                      className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-lime-300 hover:shadow-sm"
-                    >
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-lime-100 font-bold text-lime-700">
-                        ✓
-                      </span>
-
-                      <span className="font-semibold text-slate-800">
-                        {market}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="relative">
-                <div className="absolute -inset-4 rounded-[2rem] bg-lime-100/60 blur-2xl" />
-
-                <div className="relative overflow-hidden rounded-[2rem] shadow-2xl">
-                  <img
-                    src={asset("markets2nd.jpg")}
-                    alt="Nilkamal Global Eggs worldwide export"
-                    className="aspect-[4/5] w-full object-cover transition duration-700 hover:scale-105"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Nilkamal Identity */}
-        <section className="bg-[#0b1f17] px-5 py-20 text-white sm:px-8 lg:px-12">
-          <div className="mx-auto max-w-7xl">
-            <div className="mx-auto max-w-3xl text-center">
-              <span className="text-sm font-bold uppercase tracking-[0.2em] text-lime-400">
-                Our Competitive Advantage
-              </span>
-
-              <h2 className="mt-4 font-display text-4xl font-black sm:text-5xl">
-                The Nilkamal Identity:
-                <span className="block text-lime-400">
-                  Direct Sourcing & End-to-End Control
-                </span>
-              </h2>
-            </div>
-
-            <div className="mt-14 grid gap-8 lg:grid-cols-3">
-              {[
-                {
-                  number: "01",
-                  title: "Direct Farm Sourcing",
-                  text:
-                    "We supply high-grade White and Brown Table Eggs directly from primary farm operations to global markets.",
-                },
-                {
-                  number: "02",
-                  title: "Integrated Value Chain",
-                  text:
-                    "From hen nutrition and biosecure breeding to automated grading and cold-chain container loading, we control the critical stages of the supply chain.",
-                },
-                {
-                  number: "03",
-                  title: "Port-Ready Supply",
-                  text:
-                    "Our integrated structure supports shell freshness, extended shelf life, and competitive, market-driven pricing straight to your destination port.",
-                },
-              ].map((item) => (
-                <div
-                  key={item.number}
-                  className="group rounded-3xl border border-white/10 bg-white/[0.06] p-8 backdrop-blur-sm transition duration-300 hover:-translate-y-2 hover:border-lime-400/40"
-                >
-                  <div className="text-4xl font-black text-lime-400/40 transition group-hover:text-lime-400">
-                    {item.number}
+                    <span className="font-semibold text-slate-800">
+                      {market}
+                    </span>
                   </div>
+                ))}
+              </div>
+            </div>
 
-                  <h3 className="mt-5 text-xl font-bold">
-                    {item.title}
-                  </h3>
+            <div className="relative">
+              <div className="absolute -inset-4 rounded-[2rem] bg-amber-100/60 blur-2xl" />
 
-                  <p className="mt-4 leading-7 text-white/65">
-                    {item.text}
-                  </p>
-                </div>
-              ))}
+              <div className="relative overflow-hidden rounded-[2rem] shadow-2xl">
+                <img
+                  src={asset("markets1st.jpg")}
+                  alt="Nilkamal Global Egg worldwide export"
+                  className="aspect-[4/5] w-full object-cover transition duration-700 hover:scale-105"
+                />
+              </div>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* White Label / OEM */}
-        <section className="bg-[#f5f7f2] px-5 py-20 sm:px-8 lg:px-12">
-          <div className="mx-auto max-w-7xl">
-            <div className="mx-auto max-w-4xl text-center">
-              <span className="text-sm font-bold uppercase tracking-[0.2em] text-lime-700">
-                OEM & Private Label
+      {/* Nilkamal Identity */}
+      <section className="bg-slate-950 px-6 py-20 text-white sm:px-8 lg:px-12">
+        <div className="mx-auto max-w-7xl">
+          <div className="mx-auto max-w-3xl text-center">
+            <span className="text-sm font-bold uppercase tracking-[0.2em] text-amber-400">
+              Our Competitive Advantage
+            </span>
+
+            <h2 className="mt-4 text-3xl font-bold sm:text-4xl">
+              The Nilkamal Identity:
+              <span className="block text-amber-400">
+                Direct Sourcing & End-to-End Control
               </span>
+            </h2>
+          </div>
 
-              <h2 className="mt-4 font-display text-4xl font-black text-[#0c2117] sm:text-5xl">
-                Complete White Labeling & OEM Export Solutions
-              </h2>
-
-              <p className="mt-6 text-base leading-8 text-slate-600">
-                Beyond our core Nilkamal and Smart Protein brands, we serve as
-                a reliable OEM partner for international importers, supermarket
-                chains, and domestic trade houses seeking to export under
-                their own private brands.
-              </p>
-
-              <p className="mt-4 text-base leading-8 text-slate-600">
-                We provide end-to-end contract packaging and custom
-                white-labeling solutions tailored to your market's exact
-                regulatory and aesthetic requirements.
-              </p>
-            </div>
-
-            <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {[
-                {
-                  title: "Custom Retail Cartons",
-                  text:
-                    "Private-branded 6, 10, 12, 15, and 30-egg pulp or plastic consumer cartons with custom artwork, barcodes, and local language labeling.",
-                },
-                {
-                  title: "Export Master Shipping Boxes",
-                  text:
-                    "Heavy-duty, shock-resistant 360-egg bulk master cartons designed for long-transit maritime stability.",
-                },
-                {
-                  title: "Regulatory & Stamp Customization",
-                  text:
-                    "Brand-specific shell stamping using food-grade inks specifying origin, batch codes, packing dates, and expiry dates.",
-                },
-                {
-                  title: "Turnkey Brand Execution",
-                  text:
-                    "From initial artwork approval and packaging compliance checks to final port dispatch, we handle full operational execution.",
-                },
-              ].map((item) => (
-                <div
-                  key={item.title}
-                  className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm transition duration-300 hover:-translate-y-2 hover:shadow-xl"
-                >
-                  <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-lime-100 text-xl text-lime-700">
-                    ◆
-                  </div>
-
-                  <h3 className="text-lg font-bold text-slate-900">
-                    {item.title}
-                  </h3>
-
-                  <p className="mt-4 text-sm leading-7 text-slate-600">
-                    {item.text}
-                  </p>
+          <div className="mt-14 grid gap-8 lg:grid-cols-3">
+            {[
+              {
+                number: "01",
+                title: "Direct Farm Sourcing",
+                text:
+                  "We supply high-grade White and Brown Table Eggs directly from primary farm operations to global markets.",
+              },
+              {
+                number: "02",
+                title: "Integrated Value Chain",
+                text:
+                  "From hen nutrition and biosecure breeding to automated grading and cold-chain container loading, we control the critical stages of the supply chain.",
+              },
+              {
+                number: "03",
+                title: "Port-Ready Supply",
+                text:
+                  "Our integrated structure supports shell freshness, extended shelf life, and competitive, market-driven pricing straight to your destination port.",
+              },
+            ].map((item) => (
+              <div
+                key={item.number}
+                className="group rounded-3xl border border-white/10 bg-white/[0.06] p-8 backdrop-blur-sm transition duration-300 hover:-translate-y-2 hover:border-amber-400/40"
+              >
+                <div className="text-4xl font-black text-amber-400/40 transition group-hover:text-amber-400">
+                  {item.number}
                 </div>
-              ))}
-            </div>
+
+                <h3 className="mt-5 text-xl font-bold">
+                  {item.title}
+                </h3>
+
+                <p className="mt-4 leading-7 text-slate-300">
+                  {item.text}
+                </p>
+              </div>
+            ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Export CTA */}
-        <section className="bg-lime-400 px-5 py-14 sm:px-8 lg:px-12">
-          <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-7 text-center lg:flex-row lg:text-left">
-            <div>
-              <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#102018]/60">
-                Your Market. Our Supply.
-              </p>
+      {/* White Label / OEM */}
+      <section className="bg-slate-50 px-6 py-20 sm:px-8 lg:px-12">
+        <div className="mx-auto max-w-7xl">
+          <div className="mx-auto max-w-4xl text-center">
+            <span className="text-sm font-bold uppercase tracking-[0.2em] text-amber-600">
+              OEM & Private Label
+            </span>
 
-              <h2 className="mt-2 font-display text-4xl font-black text-[#102018]">
-                Built for Global Trade.
-              </h2>
-            </div>
+            <h2 className="mt-4 text-3xl font-bold text-slate-900 sm:text-4xl lg:text-5xl">
+              Complete White Labeling & OEM Export Solutions
+            </h2>
 
-            <a
-              id="world-contact"
-              href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(
-                "Hello Nilkamal Global Eggs, I am interested in your international export solutions."
-              )}`}
-              target="_blank"
-              rel="noreferrer"
-              className="rounded-full bg-[#102018] px-8 py-4 text-sm font-bold text-white shadow-xl transition hover:-translate-y-1 hover:bg-[#173a28]"
-            >
-              Start an Export Discussion
-            </a>
+            <p className="mt-6 text-base leading-8 text-slate-600">
+              Beyond our core Nilkamal and Smart Protein brands, we serve as a
+              reliable OEM partner for international importers, supermarket
+              chains, and domestic trade houses seeking to export under their
+              own private brands.
+            </p>
+
+            <p className="mt-4 text-base leading-8 text-slate-600">
+              We provide end-to-end contract packaging and custom white-labeling
+              solutions tailored to your market's exact regulatory and
+              aesthetic requirements.
+            </p>
           </div>
-        </section>
-      </main>
 
+          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              {
+                title: "Custom Retail Cartons",
+                text:
+                  "Private-branded 6, 10, 12, 15, and 30-egg pulp or plastic consumer cartons with custom artwork, barcodes, and local language labeling.",
+              },
+              {
+                title: "Export Master Shipping Boxes",
+                text:
+                  "Heavy-duty, shock-resistant 360-egg bulk master cartons designed for long-transit maritime stability.",
+              },
+              {
+                title: "Regulatory & Stamp Customization",
+                text:
+                  "Brand-specific shell stamping using food-grade inks specifying origin, batch codes, packing dates, and expiry dates.",
+              },
+              {
+                title: "Turnkey Brand Execution",
+                text:
+                  "From initial artwork approval and packaging compliance checks to final port dispatch, we handle full operational execution.",
+              },
+            ].map((item) => (
+              <div
+                key={item.title}
+                className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm transition duration-300 hover:-translate-y-2 hover:shadow-xl"
+              >
+                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-xl text-amber-700">
+                  ◆
+                </div>
+
+                <h3 className="text-lg font-bold text-slate-900">
+                  {item.title}
+                </h3>
+
+                <p className="mt-4 text-sm leading-7 text-slate-600">
+                  {item.text}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Export corridor strip */}
+      <section className="bg-amber-500 px-6 py-14 sm:px-8 lg:px-12">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-7 text-center lg:flex-row lg:text-left">
+          <div>
+            <p className="text-sm font-bold uppercase tracking-[0.2em] text-slate-900/60">
+              Your Market. Our Supply.
+            </p>
+
+            <h2 className="mt-2 text-3xl font-black text-slate-950 sm:text-4xl">
+              Built for Global Trade.
+            </h2>
+          </div>
+
+          <a
+            id="world-contact"
+            href="https://wa.me/919561789987?text=Hello%20Nilkamal%20Global%20Eggs%2C%20I%20am%20interested%20in%20your%20international%20export%20solutions."
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-full bg-slate-950 px-8 py-4 text-sm font-bold text-white shadow-xl transition hover:-translate-y-1 hover:bg-slate-800"
+          >
+            Start an Export Discussion
+          </a>
+        </div>
+      </section>
       <Footer />
     </>
   );
@@ -853,11 +921,11 @@ function CertificatesPage() {
   return (
     <>
       <Header />
-      <main className="pt-20">
+      <main className="">
         <PageHero title="Certified Quality & Global Compliance" eyebrow="Quality Assurance" image="certificate1st.jpg" />
         <section className="section-pad bg-white">
           <div className="mx-auto max-w-5xl px-5 lg:px-8">
-            <p className="mx-auto max-w-4xl text-center text-lg leading-8 text-slate-600">At Nilkamal Global Eggs, our export operations are structured around international food safety regulations, veterinary health protocols, and biosecurity requirements. We use documented quality systems and applicable certifications to support compliant shipments for destination markets.</p>
+            <p className="mx-auto max-w-4xl text-center text-lg leading-8 text-slate-600">At Nilkamal Global Egg, our export operations are structured around international food safety regulations, veterinary health protocols, and biosecurity requirements. We use documented quality systems and applicable certifications to support compliant shipments for destination markets.</p>
             <div className="mt-14 grid gap-7 md:grid-cols-3">
               {["certificate1st.jpg","certificate2nd.png","certificate3rd.jpg"].map((x,i) => <div key={x} className="flex min-h-64 items-center justify-center rounded-[2rem] border border-slate-200 bg-[#f8faf6] p-8 shadow-sm"><img src={asset(x)} alt={`Nilkamal certificate ${i+1}`} className="max-h-48 w-full object-contain" /></div>)}
             </div>
@@ -873,8 +941,8 @@ function FarmersPage() {
   return (
     <>
       <Header />
-      <main className="pt-20">
-        <PageHero title="Sell Directly to Nilkamal Global Eggs" eyebrow="For Farmers" image="farmers1st.jpg" />
+      <main className="">
+        <PageHero title="Sell Directly to Nilkamal Global Egg" eyebrow="For Farmers" image="farmers1st.jpg" />
         <section className="section-pad bg-white">
           <div className="mx-auto max-w-7xl px-5 lg:px-8">
             <SectionHeading text="We help poultry farmers by buying eggs directly from their farms. We believe in fair, honest partnerships with transparent pricing, accurate weight checks, and clear quality testing. By cutting out middlemen, we make sure you get the full value for your hard work." title="A Direct Farm Partnership" />
@@ -903,11 +971,11 @@ function ServicesPage() {
   return (
     <>
       <Header />
-      <main className="pt-20">
+      <main className="">
         <PageHero title="Complete Egg Export Solutions" eyebrow="Services" image="homepage3rd.png" />
         <section className="section-pad bg-white">
           <div className="mx-auto max-w-6xl px-5 lg:px-8">
-            <SectionHeading text="At Nilkamal Global Eggs, we offer end-to-end egg export services built for international buyers. From initial sorting to final destination delivery, we protect quality, speed, and safety every step of the way." title="Export Services Built Around Your Supply Chain" />
+            <SectionHeading text="At Nilkamal Global Egg, we offer end-to-end egg export services built for international buyers. From initial sorting to final destination delivery, we protect quality, speed, and safety every step of the way." title="Export Services Built Around Your Supply Chain" />
             <div className="mt-14 grid gap-5 md:grid-cols-2">
               {[
                 ["Premium Table Egg Export","We specialize in exporting high-quality White and Brown table eggs. Through automatic sorting, strict quality checks, and protective packing, we make sure every order meets global market expectations."],
@@ -917,7 +985,7 @@ function ServicesPage() {
                 ["Built for Long-Term Growth","We partner directly with overseas importers, distributors, and supermarket chains. By delivering consistent supply, open communication, and steady pricing, we help global partners expand with confidence."]
               ].map(([t,d],i) => <article key={t} className="card md:p-8"><div className="mb-6 text-sm font-black text-lime-700">0{i+1}</div><h3 className="font-display text-3xl font-black text-[#0c2117]">{t}</h3><p className="mt-4 leading-8 text-slate-600">{d}</p></article>)}
             </div>
-            <div className="mt-12 rounded-[2rem] bg-[#e8f5ca] p-8 text-center sm:p-12"><p className="font-display text-3xl font-black text-[#10251a]">At Nilkamal Global Eggs, we do more than export eggs—we build reliable supply lines that move your business forward.</p></div>
+            <div className="mt-12 rounded-[2rem] bg-[#e8f5ca] p-8 text-center sm:p-12"><p className="font-display text-3xl font-black text-[#10251a]">At Nilkamal Global Egg, we do more than export eggs—we build reliable supply lines that move your business forward.</p></div>
           </div>
         </section>
       </main>
@@ -928,7 +996,7 @@ function ServicesPage() {
 
 const privacyText = {
   title: "Privacy Policy",
-  intro: "Nilkamal Global Eggs values your privacy and is committed to protecting your personal and business data. This Privacy Policy outlines how we collect, use, and safeguard your information when you visit nilkamalglobaleggs.com or interact with our export services.",
+  intro: "Nilkamal Global Egg values your privacy and is committed to protecting your personal and business data. This Privacy Policy outlines how we collect, use, and safeguard your information when you visit nilkamalglobaleggs.com or interact with our export services.",
   sections: [
     ["1. Information We Collect", ["Contact Information: Name, corporate email address, phone number, and messaging details.","Commercial & Business Data: Company name, registered address, target port of destination, and import licensing details.","Transaction & Order Data: Order volumes, product specifications, custom packaging choices, and billing details.","Technical Data: IP address, browser type, operating system, and site usage statistics collected automatically via analytics."]],
     ["2. How We Use Your Data", ["Responding to trade inquiries and delivering customized bulk quotes.","Processing, fulfilling, and dispatching export orders.","Managing cold-chain logistics, customs declarations, and shipping documentation.","Improving website performance, service quality, and buyer experience.","Communicating critical service updates, seasonal availability, or policy changes."]],
@@ -936,25 +1004,25 @@ const privacyText = {
     ["4. Data Security", ["We deploy appropriate technical and organizational security measures to protect your data against unauthorized access, loss, alteration, or disclosure. No internet transmission or electronic storage method can be guaranteed 100% secure."]],
     ["5. Cookies & Analytics", ["Our website may use cookies and similar technologies to analyze web traffic, remember preferences, and optimize navigation. You can modify or disable cookie settings through your browser."]],
     ["6. Your Data Rights", ["Depending on your jurisdiction, you may request access, correction, deletion, or opt-out from commercial communications, subject to legal and transactional record-keeping obligations."]],
-    ["7. Third-Party Websites", ["Our website may contain links to external platforms. Nilkamal Global Eggs is not responsible for the privacy practices, content, or data policies of external sites."]],
+    ["7. Third-Party Websites", ["Our website may contain links to external platforms. Nilkamal Global Egg is not responsible for the privacy practices, content, or data policies of external sites."]],
     ["8. Policy Updates", ["We reserve the right to modify this Privacy Policy as export regulations and business practices evolve. Updates will be published on this page with a revised date."]]
   ]
 };
 
 const termsText = {
   title: "Terms & Conditions",
-  intro: "Last Updated: August 2026. By accessing, browsing, or utilizing the website nilkamalglobaleggs.com (the “Site”) or submitting trade inquiries to Nilkamal Global Eggs (“Company,” “we,” “us,” or “our”), you (“User,” “Buyer,” or “Visitor”) agree to be bound by these Terms & Conditions.",
+  intro: "Last Updated: August 2026. By accessing, browsing, or utilizing the website nilkamalglobaleggs.com (the “Site”) or submitting trade inquiries to Nilkamal Global Egg (“Company,” “we,” “us,” or “our”), you (“User,” “Buyer,” or “Visitor”) agree to be bound by these Terms & Conditions.",
   sections: [
     ["1. General Agreement", ["These terms govern your use of our digital platform and preliminary communications, inquiries, or trade requests facilitated through the Site. If you do not agree with any part of these terms, you must refrain from using our website."]],
-    ["2. Digital Platform & Usage License", ["Nilkamal Global Eggs grants a limited, non-exclusive, non-transferable, and revocable license to access and view Site content for legitimate commercial inquiries and evaluation of export services.","You agree not to reproduce, duplicate, copy, sell, or exploit Site content without authorization; modify or reverse-engineer the Site; use crawlers, bots or scrapers to extract data; or introduce malicious code that disrupts site security or hosting performance."]],
+    ["2. Digital Platform & Usage License", ["Nilkamal Global Egg grants a limited, non-exclusive, non-transferable, and revocable license to access and view Site content for legitimate commercial inquiries and evaluation of export services.","You agree not to reproduce, duplicate, copy, sell, or exploit Site content without authorization; modify or reverse-engineer the Site; use crawlers, bots or scrapers to extract data; or introduce malicious code that disrupts site security or hosting performance."]],
     ["3. Commercial Trade Terms & Off-Platform Contracts", ["Information, specifications, and pricing displayed on the Site or provided via initial inquiries are informational and do not constitute a legally binding offer to sell.","Definitive export transactions, volumes, cold-chain specifications, payment terms, delivery schedules, and other commercial conditions are governed by formal sales contracts, Proforma Invoices, Bills of Lading, and related documents executed between the Company and buyer.","Global poultry and export markets fluctuate. Product specifications, minimum order quantities and trade terms may change before formal contract confirmation."]],
-    ["4. Intellectual Property Rights", ["All trademarks, logos, brand names, imagery, text, layouts, and trade dress associated with Nilkamal Global Eggs are the property of the Company and protected by applicable Indian and international intellectual property laws."]],
-    ["5. Third-Party Links & Services", ["The Site may contain links to external websites, logistics tracking tools, or regulatory portals. Nilkamal Global Eggs does not control, audit, or endorse external platforms and assumes no liability for interactions conducted outside the Site."]],
+    ["4. Intellectual Property Rights", ["All trademarks, logos, brand names, imagery, text, layouts, and trade dress associated with Nilkamal Global Egg are the property of the Company and protected by applicable Indian and international intellectual property laws."]],
+    ["5. Third-Party Links & Services", ["The Site may contain links to external websites, logistics tracking tools, or regulatory portals. Nilkamal Global Egg does not control, audit, or endorse external platforms and assumes no liability for interactions conducted outside the Site."]],
     ["6. Disclaimer of Warranties", ["The Site and its contents are provided on an “As Is” and “As Available” basis. The Company makes no representations or warranties regarding uninterrupted operation, absolute accuracy of third-party information, or server communications. Official export quality certifications and product warranties are provided through formal shipping documentation accompanying confirmed orders."]],
-    ["7. Limitation of Liability", ["To the fullest extent permitted by law, Nilkamal Global Eggs and its directors, officers, employees, and affiliates shall not be liable for direct, indirect, incidental, consequential, or punitive damages arising from Site access, technical failures, server downtime, delayed inquiry transmission, or errors and omissions in online content."]],
-    ["8. Indemnification", ["You agree to defend, indemnify, and hold harmless Nilkamal Global Eggs and its management from claims, liabilities, losses, damages, or reasonable legal expenses resulting from your violation of these Terms or misuse of the Site."]],
+    ["7. Limitation of Liability", ["To the fullest extent permitted by law, Nilkamal Global Egg and its directors, officers, employees, and affiliates shall not be liable for direct, indirect, incidental, consequential, or punitive damages arising from Site access, technical failures, server downtime, delayed inquiry transmission, or errors and omissions in online content."]],
+    ["8. Indemnification", ["You agree to defend, indemnify, and hold harmless Nilkamal Global Egg and its management from claims, liabilities, losses, damages, or reasonable legal expenses resulting from your violation of these Terms or misuse of the Site."]],
     ["9. Governing Law & Dispute Resolution", ["These Terms are governed by the laws of India. Any dispute shall first be addressed through good-faith informal negotiation. If unresolved within sixty days, the dispute shall be subject to the exclusive jurisdiction of the competent courts located in India."]],
-    ["10. Revisions to Terms", ["Nilkamal Global Eggs reserves the right to amend, update, or modify these Terms at any time without prior notice. Continued use following changes constitutes acceptance of the modified terms."]]
+    ["10. Revisions to Terms", ["Nilkamal Global Egg reserves the right to amend, update, or modify these Terms at any time without prior notice. Continued use following changes constitutes acceptance of the modified terms."]]
   ]
 };
 
@@ -962,7 +1030,7 @@ function LegalPage({ data }) {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-white pt-28">
+      <main className="min-h-screen bg-white">
         <article className="mx-auto max-w-4xl px-5 pb-24 lg:px-8">
           <div className="eyebrow">Legal</div>
           <h1 className="font-display text-5xl font-black text-[#0c2117] sm:text-6xl">{data.title}</h1>
@@ -978,7 +1046,7 @@ function LegalPage({ data }) {
             ))}
             <section>
               <h2 className="text-2xl font-black text-[#0c2117]">Contact Us</h2>
-              <p className="mt-3 leading-8">For questions regarding this policy or these terms, contact Nilkamal Global Eggs at <a className="font-bold text-lime-700" href={`mailto:${EMAIL}`}>{EMAIL}</a>.</p>
+              <p className="mt-3 leading-8">For questions regarding this policy or these terms, contact Nilkamal Global Egg at <a className="font-bold text-lime-700" href={`mailto:${EMAIL}`}>{EMAIL}</a>.</p>
             </section>
           </div>
         </article>
@@ -997,8 +1065,8 @@ function Footer() {
       <div className="mx-auto max-w-7xl px-5 py-16 lg:px-8">
         <div className="grid gap-12 lg:grid-cols-[1.2fr_0.8fr]">
           <div>
-            <div className="mb-3 inline-flex rounded-2xl p-1"><img src={asset("nilkamalglobalegglogo.png")} alt="Nilkamal Global Eggs" className="h-25 w-auto"/></div>
-            <h2 className="font-display text-4xl font-black sm:text-5xl">Expand Your Market with Nilkamal Global Eggs</h2>
+            <div className="mb-2 inline-flex rounded-2xl p-1"><img src={asset("nilkamalglobalegglogo.png")} alt="Nilkamal Global Egg" className="h-40 w-auto"/></div>
+            <h2 className="font-display text-4xl font-black sm:text-5xl">Expand Your Market with Nilkamal Global Egg</h2>
             <p className="mt-5 max-w-2xl text-lg leading-8 text-white/65">Tell us your volume, grade, and delivery requirements, and we will package the ideal supply solution. Fresh, dependable, and export-ready—delivered straight to your port.</p>
             <p className="mt-6 max-w-2xl text-xl font-bold text-lime-300">“Tell us what you need, and we’ll crack open the perfect solution for your market.”</p>
           </div>
@@ -1015,7 +1083,7 @@ function Footer() {
         </div>
         <div className="my-10 h-px bg-white/10" />
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-white/50">Copyright © 2026 Nilkamal Global Eggs. All rights reserved.</p>
+          <p className="text-sm text-white/50">Copyright © 2026 Nilkamal Global Egg. All rights reserved.</p>
           <div className="flex gap-3">
             <a href="https://www.instagram.com/nilkamalglobalegg?igsh=MWw0bjQ1MHdqYTgyZA==" target="_blank" rel="noreferrer" className="rounded-xl bg-white p-2 transition hover:-translate-y-1"><img src={asset("footer1st.jpeg")} alt="Instagram" className="h-9 w-9 object-contain" /></a>
             <a href="https://share.google/79cAv1OUeEzA49Tku" target="_blank" rel="noreferrer" className="rounded-xl bg-white p-2 transition hover:-translate-y-1"><img src={asset("footer2nd.jpg")} alt="Google profile" className="h-9 w-9 object-contain" /></a>
@@ -1028,31 +1096,125 @@ function Footer() {
 
 function App() {
   const route = useHashRoute();
+  useScrollAnimations(route);
 
   useEffect(() => {
     const path = route === "/" ? "/" : route;
-    document.title = path === "/about" ? "About | Nilkamal Global Eggs"
-      : path === "/contact" ? "Contact | Nilkamal Global Eggs"
-      : path === "/certificates" ? "Certificates | Nilkamal Global Eggs"
-      : path === "/farmers" ? "For Farmers | Nilkamal Global Eggs"
-      : path === "/services" ? "Services | Nilkamal Global Eggs"
-      : path === "/india" ? "Smart Protein India | Nilkamal Global Eggs" 
-      : path === "/privacy" ? "Privacy Policy | Nilkamal Global Eggs"
-      : path === "/terms" ? "Terms & Conditions | Nilkamal Global Eggs"
-      : "Nilkamal Global Eggs | Premium Egg Exporter from India";
+    document.title = path === "/about" ? "About | Nilkamal Global Egg"
+      : path === "/contact" ? "Contact | Nilkamal Global Egg"
+      : path === "/certificates" ? "Certificates | Nilkamal Global Egg"
+      : path === "/farmers" ? "For Farmers | Nilkamal Global Egg"
+      : path === "/services" ? "Services | Nilkamal Global Egg"
+      : path === "/india" ? "Smart Protein India | Nilkamal Global Egg"
+      : path === "/world" ? "Global Markets | Nilkamal Global Egg"
+      : path === "/privacy" ? "Privacy Policy | Nilkamal Global Egg"
+      : path === "/terms" ? "Terms & Conditions | Nilkamal Global Egg"
+      : "Nilkamal Global Egg | Premium Egg Exporter from India";
   }, [route]);
 
-  if (route === "/about") return <AboutPage />;
-  if (route === "/contact") return <ContactPage />;
-  if (route === "/india") return <IndiaPage />;
-  if (route === "/world") return <WorldPage />;
-  if (route === "/certificates") return <CertificatesPage />;
-  if (route === "/farmers") return <FarmersPage />;
-  if (route === "/services") return <ServicesPage />;
-  if (route === "/privacy") return <LegalPage data={privacyText} />;
-  if (route === "/terms") return <LegalPage data={termsText} />;
-  if (route === "/contact-success") return <><Header /><main className="grid min-h-[70vh] place-items-center bg-[#eef2e9] px-5 pt-24"><div className="max-w-xl rounded-[2rem] bg-white p-10 text-center shadow-xl"><CircleCheckBig className="mx-auto text-lime-700" size={64}/><h1 className="mt-5 font-display text-4xl font-black text-[#0c2117]">Thank you!</h1><p className="mt-4 leading-7 text-slate-600">Your enquiry has been submitted. Our export team will contact you shortly.</p><button onClick={() => go("/")} className="mt-7 rounded-full bg-[#10251a] px-6 py-3 font-bold text-white">Back to Home</button></div></main><Footer /></>;
-  return <Home />;
+  let page;
+  if (route === "/about") page = <AboutPage />;
+  else if (route === "/contact") page = <ContactPage />;
+  else if (route === "/india") page = <IndiaPage />;
+  else if (route === "/world") page = <WorldPage />;
+  else if (route === "/certificates") page = <CertificatesPage />;
+  else if (route === "/farmers") page = <FarmersPage />;
+  else if (route === "/services") page = <ServicesPage />;
+  else if (route === "/privacy") page = <LegalPage data={privacyText} />;
+  else if (route === "/terms") page = <LegalPage data={termsText} />;
+  else if (route === "/contact-success") {
+    page = (
+      <>
+        <Header />
+        <main className="grid min-h-[70vh] place-items-center bg-[#eef2e9] px-5 pt-24">
+          <div className="max-w-xl rounded-[2rem] bg-white p-10 text-center shadow-xl">
+            <CircleCheckBig className="mx-auto text-lime-700" size={64}/>
+            <h1 className="mt-5 font-display text-4xl font-black text-[#0c2117]">Thank you!</h1>
+            <p className="mt-4 leading-7 text-slate-600">Your enquiry has been submitted. Our export team will contact you shortly.</p>
+            <button onClick={() => go("/")} className="mt-7 rounded-full bg-[#10251a] px-6 py-3 font-bold text-white transition hover:-translate-y-1 hover:shadow-xl">Back to Home</button>
+          </div>
+        </main>
+        <Footer />
+      </>
+    );
+  } else {
+    page = <Home />;
+  }
+
+  return (
+    <>
+      <AnimatedPage key={route}>{page}</AnimatedPage>
+      <FloatingWhatsApp />
+    </>
+  );
 }
 
-createRoot(document.getElementById("root")).render(<React.StrictMode><App /></React.StrictMode>);
+
+function MotionStyles() {
+  return (
+    <style>{`
+      html { scroll-behavior: smooth; }
+      body { overflow-x: hidden; }
+      .site-header { animation: headerDrop .7s cubic-bezier(.2,.8,.2,1) both; }
+      .hero-bg { animation: heroZoom 16s ease-in-out infinite alternate; transform-origin: center; }
+      .page-transition { animation: pageEnter .55s cubic-bezier(.2,.8,.2,1) both; }
+      .scroll-reveal { opacity: 0; transform: translateY(34px); transition: opacity .75s cubic-bezier(.2,.8,.2,1), transform .75s cubic-bezier(.2,.8,.2,1), box-shadow .35s ease, border-color .35s ease; transition-delay: var(--reveal-delay, 0ms); }
+      .scroll-reveal.is-visible { opacity: 1; transform: translateY(0); }
+      .card, .image-card, .glass-card, .image-frame { will-change: transform; }
+      .card:hover, .image-card:hover { transform: translateY(-7px); }
+      .image-card img, .image-frame img { transition: transform .8s cubic-bezier(.2,.8,.2,1), filter .5s ease; }
+      .image-card:hover img, .image-frame:hover img { transform: scale(1.045); }
+      .whatsapp-button { position: relative; overflow: hidden; }
+      .whatsapp-button::after { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 20%, rgba(255,255,255,.38) 45%, transparent 70%); transform: translateX(-130%); transition: transform .7s ease; }
+      .whatsapp-button:hover { transform: translateY(-3px); box-shadow: 0 18px 35px rgba(0,0,0,.22); }
+      .whatsapp-button:hover::after { transform: translateX(130%); }
+      .floating-whatsapp { position: fixed; right: 22px; bottom: 22px; z-index: 70; width: 58px; height: 58px; display: flex; align-items: center; justify-content: center; border-radius: 9999px; background: #b6e43b; color: #102018; box-shadow: 0 16px 35px rgba(0,0,0,.25); transition: transform .3s ease, box-shadow .3s ease; }
+      .floating-whatsapp:hover { transform: translateY(-5px) scale(1.08); box-shadow: 0 22px 45px rgba(0,0,0,.32); }
+      .floating-whatsapp-pulse { position: absolute; inset: 0; border-radius: inherit; background: rgba(182,228,59,.45); animation: waPulse 2.2s ease-out infinite; z-index: -1; }
+      @keyframes headerDrop { from { opacity: 0; transform: translateY(-18px); } to { opacity: 1; transform: translateY(0); } }
+      @keyframes heroZoom { from { transform: scale(1.03); } to { transform: scale(1.1); } }
+      @keyframes pageEnter { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+      @keyframes waPulse { 0% { transform: scale(1); opacity: .65; } 75%, 100% { transform: scale(1.7); opacity: 0; } }
+      .site-header { transition: background .35s ease, box-shadow .35s ease, transform .35s ease, border-color .35s ease; }
+      .header-scrolled { transform: translateY(0); }
+      .nav-link { position: relative; transition: color .3s ease, transform .3s ease; }
+      .nav-link::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: 2px; height: 2px; border-radius: 999px; background: #b6e43b; transform: scaleX(0); transform-origin: center; transition: transform .3s ease; }
+      .nav-link:hover { transform: translateY(-1px); }
+      .nav-link:hover::after { transform: scaleX(1); }
+      .hero-badge { animation: badgeFloat 4s ease-in-out infinite; }
+      .hero-title { animation: heroTitleIn 1s cubic-bezier(.16,1,.3,1) .15s both; }
+      .hero-copy { animation: heroCopyIn 1s cubic-bezier(.16,1,.3,1) .32s both; }
+      .hero-actions { animation: heroCopyIn 1s cubic-bezier(.16,1,.3,1) .48s both; }
+      .glass-card { transition: transform .45s cubic-bezier(.2,.8,.2,1), background .35s ease, border-color .35s ease, box-shadow .45s ease; }
+      .glass-card:hover { transform: translateY(-9px) scale(1.015); background: rgba(255,255,255,.14); border-color: rgba(182,228,59,.35); box-shadow: 0 22px 55px rgba(0,0,0,.22); }
+      .card, .image-card, .interactive-card { transform-style: preserve-3d; perspective: 1000px; }
+      .card:hover { transform: perspective(1000px) translateY(-9px) rotateX(1deg) rotateY(-1deg); box-shadow: 0 24px 50px rgba(12,33,23,.12); }
+      .image-card:hover { transform: perspective(1000px) translateY(-9px) rotateY(1deg); box-shadow: 0 28px 60px rgba(0,0,0,.22); }
+      .interactive-card::before { content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: inherit; opacity: 0; background: linear-gradient(120deg, transparent 25%, rgba(255,255,255,.28) 45%, transparent 65%); transform: translateX(-120%); transition: opacity .2s ease, transform .8s ease; z-index: 5; }
+      .interactive-card:hover::before { opacity: 1; transform: translateX(120%); }
+      .scroll-reveal { opacity: 0; transition: opacity .9s cubic-bezier(.16,1,.3,1), transform .9s cubic-bezier(.16,1,.3,1), box-shadow .4s ease, border-color .4s ease; transition-delay: var(--reveal-delay, 0ms); }
+      .scroll-reveal.reveal-left { transform: translate3d(-70px, 18px, 0) rotateY(5deg); }
+      .scroll-reveal.reveal-right { transform: translate3d(70px, 18px, 0) rotateY(-5deg); }
+      .scroll-reveal.reveal-up { transform: translate3d(0, 55px, 0) scale(.97); }
+      .scroll-reveal.is-visible { opacity: 1; transform: translate3d(0,0,0) rotateY(0) scale(1); }
+      .image-frame, .image-card { overflow: hidden; }
+      .image-frame::after, .image-card::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(115deg, transparent 25%, rgba(255,255,255,.2) 50%, transparent 75%); transform: translateX(-130%); transition: transform 1s ease; }
+      .image-frame:hover::after, .image-card:hover::after { transform: translateX(130%); }
+      .image-frame img, .image-card img { will-change: transform; }
+      .pill { transition: transform .3s ease, box-shadow .3s ease, background .3s ease; }
+      .pill:hover { transform: translateY(-4px); box-shadow: 0 10px 25px rgba(12,33,23,.1); }
+      .dropdown-link { transition: transform .25s ease, background .25s ease, color .25s ease; }
+      .dropdown-link:hover { transform: translateX(4px); }
+      .mobile-link { transition: transform .25s ease, background .25s ease, color .25s ease; }
+      .mobile-link:hover { transform: translateX(5px); }
+      @keyframes badgeFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+      @keyframes heroTitleIn { from { opacity: 0; transform: translate3d(0,35px,0) scale(.97); filter: blur(6px); } to { opacity: 1; transform: none; filter: blur(0); } }
+      @keyframes heroCopyIn { from { opacity: 0; transform: translate3d(0,22px,0); } to { opacity: 1; transform: none; } }
+
+      @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } .scroll-reveal { opacity: 1 !important; transform: none !important; } }
+      @media (max-width: 640px) { .floating-whatsapp { right: 16px; bottom: 16px; width: 54px; height: 54px; } }
+    `}</style>
+  );
+}
+
+createRoot(document.getElementById("root")).render(<React.StrictMode><MotionStyles /><App /></React.StrictMode>);
