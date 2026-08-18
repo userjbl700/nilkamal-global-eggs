@@ -189,7 +189,7 @@ function Header() {
     <header className={`site-header sticky top-0 z-50 text-white transition-all duration-500 ${scrolled ? "header-scrolled bg-[#071811] shadow-2xl shadow-black/30" : "bg-[#071811] shadow-lg shadow-black/15"}`}>
       <div className="mx-auto flex max-w-7xl items-center justify-between px-2 py-3 lg:px-6">
         <button onClick={() => navigate("/")} className="shrink-0" aria-label="Nilkamal Global Egg home">
-          <img src={asset("nilkamalglobalegglogo.png")} alt="Nilkamal Global Egg" className="h-40 w-auto object-contain" />
+          <img src={asset("nilkamalglobalegglogo.png")} alt="Nilkamal Global Egg" className="h-41 w-auto object-contain" />
         </button>
 
         <nav className="hidden items-center gap-1 lg:flex">
